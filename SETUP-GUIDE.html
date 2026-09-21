@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Guide — Copy Portal (Vercel + Supabase + Google)</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        code.inline { background:#eef2ff; color:#4338ca; padding:2px 6px; border-radius:6px; font-size:.85em; }
+        pre { background:#0f172a; color:#e2e8f0; border-radius:12px; padding:16px; overflow-x:auto; font-size:.85em; }
+        pre code { color:#e2e8f0; background:transparent; padding:0; }
+        details.tips summary { cursor:pointer; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased">
+
+    <!-- HEADER -->
+    <header class="bg-slate-900 text-white sticky top-0 z-40 shadow-lg">
+        <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-500 p-2 rounded-xl">
+                    <i data-lucide="rocket" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold tracking-tight">Copy Portal — Complete Setup Guide</h1>
+                    <p class="text-xs text-slate-400">Vercel + Supabase + Google Cloud · ~30 min · all free tiers</p>
+                </div>
+            </div>
+            <nav class="hidden md:flex items-center gap-4 text-xs font-semibold text-slate-300">
+                <a href="#phase1" class="hover:text-white">1. Supabase</a>
+                <a href="#phase2" class="hover:text-white">2. Google Cloud</a>
+                <a href="#phase3" class="hover:text-white">3. Enable Google</a>
+                <a href="#phase4" class="hover:text-white">4. config.js</a>
+                <a href="#phase5" class="hover:text-white">5. Vercel</a>
+                <a href="#phase6" class="hover:text-white">6. Test</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-6 py-10 space-y-12">
+
+        <!-- INTRO -->
+        <section class="bg-white border border-slate-200 rounded-2xl p-6">
+            <p class="text-sm text-slate-600 leading-relaxed">
+                Follow these steps <strong class="text-slate-900">in order</strong>. Each phase names the exact buttons to click
+                and the exact values to paste. You only need the <strong class="text-slate-900">free tier</strong> of all three services.
+            </p>
+            <div class="mt-4 grid sm:grid-cols-3 gap-3 text-sm">
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
+                    <div class="flex items-center gap-2 font-bold text-emerald-700 text-xs uppercase tracking-wider mb-1">
+                        <i data-lucide="database" class="w-4 h-4"></i> Phase 1
+                    </div>
+                    <span class="text-slate-700">Create Supabase project + table</span>
+                </div>
+                <div class="bg-sky-50 border border-sky-200 rounded-xl px-4 py-3">
+                    <div class="flex items-center gap-2 font-bold text-sky-700 text-xs uppercase tracking-wider mb-1">
+                        <i data-lucide="chrome" class="w-4 h-4"></i> Phase 2
+                    </div>
+                    <span class="text-slate-700">Create Google OAuth credentials</span>
+                </div>
+                <div class="bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3">
+                    <div class="flex items-center gap-2 font-bold text-indigo-700 text-xs uppercase tracking-wider mb-1">
+                        <i data-lucide="triangle" class="w-4 h-4"></i> Phase 5
+                    </div>
+                    <span class="text-slate-700">Deploy to Vercel</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- PHASE 1 -->
+        <section id="phase1" class="scroll-mt-24">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="bg-slate-900 text-white w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0">1</span>
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">Supabase — create project &amp; get keys</h2>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-3 text-sm text-slate-700 leading-relaxed">
+                <ol class="list-decimal list-inside space-y-2">
+                    <li>Go to <a href="https://supabase.com" class="text-indigo-600 font-semibold underline">supabase.com</a> and <strong>Sign in</strong> (Google/GitHub auth).</li>
+                    <li>Click <strong>New project</strong>.</li>
+                    <li>Fill in:
+                        <ul class="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li><strong>Organization</strong>: create one if needed (click "New organization").</li>
+                            <li><strong>Project name</strong>: <code class="inline">copy-portal</code></li>
+                            <li><strong>Database password</strong>: click "Generate a password" and <strong>save it</strong> (shown once).</li>
+                            <li><strong>Region</strong>: pick closest to your users — for India use <strong class="text-emerald-700">Singapore (<code class="inline">ap-southeast-1</code>)</strong> or <strong class="text-emerald-700">Mumbai (<code class="inline">ap-south-1</code>)</strong>.</li>
+                        </ul>
+                    </li>
+                    <li>Click <strong>Create new project</strong> → wait 2–3 minutes until status is green.</li>
+                    <li>Open <strong>Project Settings → API</strong> (gear icon, left sidebar).</li>
+                    <li>Copy two values somewhere safe:
+                        <ul class="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li><strong>Project URL</strong> — like <code class="inline">https://abcdefghijkl.supabase.co</code></li>
+                            <li><strong>anon public key</strong> — the long <code class="inline">eyJ...</code> string</li>
+                        </ul>
+                        <p class="text-xs text-amber-700 mt-1"><i data-lucide="alert-triangle" class="w-3.5 h-3.5 inline"></i> The <strong>service_role</strong> / JWT secret keys stay secret — never put them in the app.</p>
+                    </li>
+                    <li>Create the table: <strong>SQL Editor → New query</strong> → paste <code class="inline">supabase/schema.sql</code> → click <strong>Run</strong>.</li>
+                    <li>You should see <em>"Success. No rows returned"</em>. Verify under <strong>Table Editor → snippets</strong> (empty table exists).</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- PHASE 2 -->
+        <section id="phase2" class="scroll-mt-24">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="bg-slate-900 text-white w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0">2</span>
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">Google Cloud — create OAuth credentials</h2>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-3 text-sm text-slate-700 leading-relaxed">
+                <ol class="list-decimal list-inside space-y-2">
+                    <li>Go to <a href="https://console.cloud.google.com" class="text-indigo-600 font-semibold underline">console.cloud.google.com</a> and sign in.</li>
+                    <li>No project yet? Top bar → <strong>Select a project → New Project</strong> → name <code class="inline">copy-portal</code> → <strong>Create</strong>.</li>
+                    <li><strong>Select that project</strong> in the top bar — everything below runs inside it.</li>
+                    <li><strong>APIs &amp; Services → OAuth consent screen</strong>:
+                        <ul class="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li>User type: <strong>External</strong> → <strong>Create</strong>.</li>
+                            <li>Fill only required fields (App name, support email, developer contact email).</li>
+                            <li>Add your own Google account under <strong>Test users</strong> (recommended).</li>
+                            <li>Save — no scopes or publishing needed.</li>
+                        </ul>
+                    </li>
+                    <li><strong>APIs &amp; Services → Credentials → + Create credentials → OAuth client ID</strong>:
+                        <ul class="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li>Application type: <strong>Web application</strong>.</li>
+                            <li>Name: <code class="inline">copy-portal-web</code>.</li>
+                            <li><strong>Authorized JavaScript origins</strong> (add both):
+                                <pre><code>https://&lt;your-project-ref&gt;.supabase.co
+http://localhost:3000
+                                </code></pre>
+                            </li>
+                            <li><strong>Authorized redirect URIs</strong> (add both):
+                                <pre><code>https://&lt;your-project-ref&gt;.supabase.co/auth/v1/callback
+http://localhost:3000
+                                </code></pre>
+                            </li>
+                            <li>Click <strong>Create</strong>.</li>
+                        </ul>
+                    </li>
+                    <li>Copy the <strong>Client ID</strong> and <strong>Client Secret</strong> now (viewable later from the credentials list).</li>
+                </ol>
+                <details class="tips bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <summary class="font-semibold text-slate-800 flex items-center gap-2"><i data-lucide="help-circle" class="w-4 h-4 text-indigo-500"></i> What is "your-project-ref"?</summary>
+                    <p class="mt-2 text-sm">It's the subdomain portion of your Supabase Project URL. If your URL is <code class="inline">https://abcdefghijkl.supabase.co</code>, then <code class="inline">abcdefghijkl</code> is your project ref.</p>
+                </details>
+            </div>
+        </section>
+
+        <!-- PHASE 3 -->
+        <section id="phase3" class="scroll-mt-24">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="bg-slate-900 text-white w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0">3</span>
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">Supabase — enable Google login</h2>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-3 text-sm text-slate-700 leading-relaxed">
+                <ol class="list-decimal list-inside space-y-2">
+                    <li>Back in Supabase: <strong>Authentication → Providers</strong>.</li>
+                    <li>Find <strong>Google</strong> → toggle <strong>Enable Sign in with Google</strong> ON.</li>
+                    <li>Paste <strong>Client ID</strong> and <strong>Client Secret</strong> from Phase 2 step 6.</li>
+                    <li>Optionally enable <strong>Skip non-verified users</strong> to let anyone with a Google account in.</li>
+                    <li>Click <strong>Save</strong>.</li>
+                    <li><strong>Authentication → URL Configuration</strong>:
+                        <ul class="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li><strong>Site URL</strong>: your future Vercel URL, e.g. <code class="inline">https://copy-portal.vercel.app</code> (update in Phase 5 once it exists).</li>
+                            <li><strong>Redirect URLs</strong> — add both:
+                                <pre><code>http://localhost:3000
+https://copy-portal.vercel.app</code></pre>
+                            </li>
+                            <li>Click <strong>Save</strong>.</li>
+                        </ul>
+                    </li>
+                </ol>
+                <p class="text-xs text-slate-500">You've now created the two "loop" links: Google Cloud redirect → Supabase callback, then Supabase redirect → your app domain.</p>
+            </div>
+        </section>
+
+        <!-- PHASE 4 -->
+        <section id="phase4" class="scroll-mt-24">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="bg-slate-900 text-white w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0">4</span>
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">Put your keys in <code class="inline">config.js</code></h2>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-3 text-sm text-slate-700 leading-relaxed">
+                <p>Edit <code class="inline">config.js</code> in this project:</p>
+                <pre><code>window.SUPABASE_CONFIG = {
+  url: "https://abcdefghijkl.supabase.co",   // Supabase Project URL (Phase 1)
+  anonKey: "eyJhbGciOi...",                 // Supabase anon public key (Phase 1)
+  redirectTo: "https://copy-portal.vercel.app" // or http://localhost:3000 while testing
+};</code></pre>
+                <ul class="list-disc list-inside space-y-1">
+                    <li><code class="inline">redirectTo</code> must match one of the <strong>Redirect URLs</strong> you added in Phase 3.</li>
+                    <li>The anon key is public by design — RLS protects the data, not the key.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- PHASE 5 -->
+        <section id="phase5" class="scroll-mt-24">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="bg-slate-900 text-white w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0">5</span>
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">Vercel — deploy</h2>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-3 text-sm text-slate-700 leading-relaxed">
+                <p class="font-semibold text-slate-800 flex items-center gap-2"><i data-lucide="git-branch" class="w-4 h-4 text-slate-500"></i> Option A — via GitHub (recommended)</p>
+                <pre><code>cd copy
+git init
+git add .
+git commit -m "Copy Portal with Supabase auth"
+git branch -M main
+git remote add origin https://github.com/YOUR_USER/copy-portal.git
+git push -u origin main</code></pre>
+                <ol class="list-decimal list-inside space-y-2">
+                    <li>Go to <a href="https://vercel.com" class="text-indigo-600 font-semibold underline">vercel.com</a> → sign in with GitHub.</li>
+                    <li><strong>Add New → Project</strong> → import the <code class="inline">copy-portal</code> repo.</li>
+                    <li>Configure:
+                        <ul class="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li>Framework preset: <strong>Other</strong>.</li>
+                            <li>Root directory: the folder holding <code class="inline">index.html</code>.</li>
+                            <li>Build command: <strong>empty</strong>. Output directory: <strong>empty</strong>.</li>
+                            <li>Vercel auto-detects <code class="inline">vercel.json</code> (static files).</li>
+                        </ul>
+                    </li>
+                    <li>Click <strong>Deploy</strong> → wait ~30 seconds → get your URL <code class="inline">https://copy-portal.vercel.app</code>.</li>
+                    <li><strong>Now fix the two URL lists with the real domain</strong>:
+                        <ul class="list-disc list-inside ml-6 mt-1 space-y-1">
+                            <li><strong>Google Cloud</strong> → Credentials → OAuth client → replace/add <code class="inline">https://copy-portal.vercel.app</code> to JS origins + redirect URIs.</li>
+                            <li><strong>Supabase</strong> → Auth → URL Configuration → add it to Site URL + Redirect URLs.</li>
+                        </ul>
+                    </li>
+                    <li>Optional: add a custom domain (e.g. <code class="inline">clip.example.in</code>) in Vercel → Project → Settings — then add that https URL to both redirect lists too.</li>
+                </ol>
+                <p class="font-semibold text-slate-800 mt-6 flex items-center gap-2"><i data-lucide="terminal" class="w-4 h-4 text-slate-500"></i> Option B — CLI (no GitHub)</p>
+                <pre><code>npm i -g vercel
+cd copy
+vercel --prod</code></pre>
+                <p class="text-xs text-slate-500">Follow the prompts (login, link directory, root = the <code class="inline">copy</code> folder).</p>
+            </div>
+        </section>
+
+        <!-- PHASE 6 -->
+        <section id="phase6" class="scroll-mt-24">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="bg-slate-900 text-white w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0">6</span>
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">Test the full flow</h2>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 text-sm text-slate-700 leading-relaxed">
+                <ol class="list-decimal list-inside space-y-2">
+                    <li>Open your Vercel URL in an incognito window → you see the <strong>Continue with Google</strong> card.</li>
+                    <li>Click it → choose a Google account → you land back, logged in.</li>
+                    <li>Click <strong>+ New</strong>, create a snippet, refresh → still there (stored in Supabase, not localStorage).</li>
+                    <li>Open a second browser → sign in with a <em>different</em> Google account → first account's snippets are invisible (<strong>RLS working</strong>).</li>
+                    <li>Test Sign out (top-right icon), edit, delete, favorite, search, tags, folders.</li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- TROUBLESHOOTING -->
+        <section class="scroll-mt-24">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="bg-rose-600 text-white w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0"><i data-lucide="wrench" class="w-4 h-4"></i></span>
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">Troubleshooting</h2>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-900 text-white text-left">
+                        <tr>
+                            <th class="px-5 py-3 font-semibold">Problem</th>
+                            <th class="px-5 py-3 font-semibold">Likely cause</th>
+                            <th class="px-5 py-3 font-semibold">Fix</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        <tr>
+                            <td class="px-5 py-3 align-top"><code class="inline">redirect_uri_mismatch</code> from Google</td>
+                            <td class="px-5 py-3 align-top">Google redirect URI doesn't include the Supabase callback</td>
+                            <td class="px-5 py-3 align-top">Verify <code class="inline">https://&lt;ref&gt;.supabase.co/auth/v1/callback</code> is in Google Cloud → OAuth client → Authorized redirect URIs</td>
+                        </tr>
+                        <tr>
+                            <td class="px-5 py-3 align-top">Blank / localhost page after OAuth</td>
+                            <td class="px-5 py-3 align-top"><code class="inline">redirectTo</code> in <code class="inline">config.js</code> doesn't match a Supabase Redirect URL</td>
+                            <td class="px-5 py-3 align-top">Update <code class="inline">config.js</code> + Supabase Site URL and Redirect URLs</td>
+                        </tr>
+                        <tr>
+                            <td class="px-5 py-3 align-top"><code class="inline">401</code> on app load / "No rows returned"</td>
+                            <td class="px-5 py-3 align-top">Wrong keys in <code class="inline">config.js</code>, or <code class="inline">schema.sql</code> not run</td>
+                            <td class="px-5 py-3 align-top">Re-run Phase 1 step 7; check Project URL + anon key in Phase 4</td>
+                        </tr>
+                        <tr>
+                            <td class="px-5 py-3 align-top">Login button error in console</td>
+                            <td class="px-5 py-3 align-top">Google provider disabled, or wrong Client ID / Secret</td>
+                            <td class="px-5 py-3 align-top">Check Supabase → Auth → Providers → Google settings</td>
+                        </tr>
+                        <tr>
+                            <td class="px-5 py-3 align-top">Data missing after switching browser</td>
+                            <td class="px-5 py-3 align-top">Signed into a different Google account</td>
+                            <td class="px-5 py-3 align-top">Sign out/in with the account that owns the data</td>
+                        </tr>
+                        <tr>
+                            <td class="px-5 py-3 align-top">Login loop / stuck</td>
+                            <td class="px-5 py-3 align-top">Supabase Site URL points to an old domain</td>
+                            <td class="px-5 py-3 align-top">Update Auth → URL Configuration → Site URL to current Vercel URL</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SECURITY -->
+        <section class="scroll-mt-24 pb-8">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="bg-emerald-600 text-white w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm shrink-0"><i data-lucide="shield-check" class="w-4 h-4"></i></span>
+                <h2 class="text-xl font-bold tracking-tight text-slate-900">Security notes</h2>
+            </div>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 space-y-2 text-sm text-slate-700 leading-relaxed">
+                <ul class="list-disc list-inside space-y-2">
+                    <li><code class="inline">anonKey</code> is <strong>public by design</strong> — never put the <code class="inline">service_role</code> key in the frontend (it bypasses RLS).</li>
+                    <li>All <code class="inline">schema.sql</code> policies scope rows to <code class="inline">auth.uid()</code> — keep RLS enabled.</li>
+                    <li>If a test fails, open the browser console (F12) for the exact error message before debugging.</li>
+                </ul>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 text-xs py-6 text-center">
+        Copy Portal setup guide · Deploy on the free tiers of Vercel, Supabase and Google Cloud
+    </footer>
+
+    <script>lucide.createIcons();</script>
+</body>
+</html>

@@ -8,13 +8,42 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- Lucide Icons for clean UI -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Local runtime config (SUPABASE URL + anon key) -->
+    <script src="config.js"></script>
     <style>
         .card-hover-dim:hover .card-content { opacity: 0.4; }
         .copy-overlay { opacity: 0; pointer-events: none; transition: all 0.2s ease; }
         .card-hover-dim:hover .copy-overlay { opacity: 1; }
+        .google-logo { display: inline-block; width: 20px; height: 20px; margin-right: 12px; vertical-align: middle; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col" x-data="portalApp()">
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="hidden flex-1 flex items-center justify-center p-6">
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-xl p-10 w-full max-w-sm text-center">
+            <div class="bg-indigo-600 text-white p-3 rounded-2xl shadow-md shadow-indigo-100 inline-flex mb-5">
+                <i data-lucide="clipboard-copy" class="w-8 h-8"></i>
+            </div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900 mb-1">Copy Portal</h1>
+            <p class="text-sm text-slate-500 mb-8">Sign in with Google to access your private snippet vault.</p>
+            <button onclick="window.portal.signInWithGoogle()" id="loginButton" class="flex items-center justify-center w-full bg-white border border-slate-300 hover:border-slate-400 hover:bg-slate-50 text-slate-700 font-medium px-5 py-2.5 rounded-xl text-sm shadow-sm transition-all cursor-pointer">
+                <svg class="google-logo" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.05 5.05 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15A11 11 0 0 0 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                Continue with Google
+            </button>
+            <p id="loginError" class="hidden mt-4 text-xs font-medium text-rose-600"></p>
+        </div>
+    </div>
+
+    <!-- APP SHELL -->
+    <div id="appShell" class="hidden flex-1 flex-col min-h-screen">
 
     <!-- HEADER -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -37,6 +66,12 @@
             <button onclick="window.portal.openModal()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl text-sm font-medium shadow-sm transition-colors cursor-pointer shrink-0">
                 <i data-lucide="plus" class="w-4 h-4"></i> New
             </button>
+            <div class="flex items-center gap-2 shrink-0">
+                <img id="userAvatar" alt="Google avatar" class="w-9 h-9 rounded-full border border-slate-200" />
+                <button onclick="window.portal.signOut()" id="logoutButton" title="Sign out" class="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-slate-50 transition-colors cursor-pointer">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+            </div>
         </div>
     </header>
 
@@ -129,7 +164,7 @@
                 </div>
                 <div class="flex items-center gap-2 mt-2">
                     <input type="checkbox" id="formFavorite" class="rounded text-indigo-600 focus:ring-indigo-500 h-4 w-4">
-                    <label type="checkbox" for="formFavorite" class="text-sm text-slate-700 cursor-pointer">Mark as Favorite</label>
+                    <label for="formFavorite" class="text-sm text-slate-700 cursor-pointer">Mark as Favorite</label>
                 </div>
                 <div class="flex justify-end gap-3 mt-4 pt-4 border-t border-slate-100">
                     <button type="button" onclick="window.portal.closeModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-sm font-medium text-slate-600 hover:bg-slate-50 cursor-pointer">Cancel</button>
@@ -157,23 +192,123 @@
         </div>
     </div>
 
+    </div><!-- /appShell -->
+
     <!-- CONTROLLER JAVASCRIPT -->
     <script>
         class CopyPortal {
             constructor() {
-                this.snippets = JSON.parse(localStorage.getItem('copy_portal_snippets')) || [];
+                this.supabase = window.supabase.createClient(
+                    window.SUPABASE_CONFIG.url,
+                    window.SUPABASE_CONFIG.anonKey
+                );
+                this.session = null;
+                this.user = null;
+                this.snippets = [];
                 this.currentFilter = 'all'; // 'all', 'favorites', 'tag:name', 'folder:name'
                 this.searchQuery = '';
                 this.init();
             }
 
-            init() {
-                this.render();
+            async init() {
+                // Restore an existing session automatically (this is the "auto-login": no click needed if already signed in, including after Google redirect)
+                const { data: { session }, error } = await this.supabase.auth.getSession();
+                if (error) console.error('getSession error', error.message);
+                this.applySession(session);
+
+                // React to later auth changes (sign-in / sign-out / token refresh)
+                this.supabase.auth.onAuthStateChange((_event, session) => {
+                    this.applySession(session);
+                });
+            }
+
+            async applySession(session) {
+                this.session = session;
+                this.user = session ? session.user : null;
+
+                if (this.user) {
+                    this.showApp();
+                    this.setUserBadge();
+                    await this.loadSnippets();
+                } else {
+                    this.showLogin();
+                }
                 lucide.createIcons();
             }
 
-            save() {
-                localStorage.setItem('copy_portal_snippets', JSON.stringify(this.snippets));
+            // ---------- AUTH UI ----------
+
+            showLogin() {
+                if (window.location.hash === '#auth') history.replaceState(null, '', window.location.pathname);
+                document.getElementById('appShell').classList.add('hidden');
+                document.getElementById('appShell').classList.remove('flex');
+                document.getElementById('loginScreen').classList.remove('hidden');
+                document.getElementById('loginScreen').classList.add('flex');
+            }
+
+            showApp() {
+                document.getElementById('loginScreen').classList.add('hidden');
+                document.getElementById('loginScreen').classList.remove('flex');
+                document.getElementById('appShell').classList.remove('hidden');
+                document.getElementById('appShell').classList.add('flex');
+            }
+
+            setUserBadge() {
+                const avatar = document.getElementById('userAvatar');
+                const meta = (this.user && this.user.user_metadata) || {};
+                if (meta.avatar_url) {
+                    avatar.src = meta.avatar_url;
+                } else if (meta.picture) {
+                    avatar.src = meta.picture;
+                } else {
+                    avatar.src = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+                        `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" rx="18" fill="#e2e8f0"/><text x="18" y="24" text-anchor="middle" font-family="Arial" font-size="14" fill="#64748b">${(meta.full_name || this.user.email || 'U')[0].toUpperCase()}</text></svg>`
+                    );
+                }
+            }
+
+            async signInWithGoogle() {
+                const btn = document.getElementById('loginButton');
+                btn.disabled = true;
+                document.getElementById('loginError').classList.add('hidden');
+
+                const { error } = await this.supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: { redirectTo: window.SUPABASE_CONFIG.redirectTo }
+                });
+
+                btn.disabled = false;
+                if (error) {
+                    const errEl = document.getElementById('loginError');
+                    errEl.innerText = 'Sign-in failed: ' + error.message;
+                    errEl.classList.remove('hidden');
+                }
+            }
+
+            async signOut() {
+                await this.supabase.auth.signOut();
+                this.snippets = [];
+                this.render();
+            }
+
+            // ---------- DATA ----------
+
+            async loadSnippets() {
+                const { data, error } = await this.supabase
+                    .from('snippets')
+                    .select('*')
+                    .order('updated_at', { ascending: false });
+
+                if (error) {
+                    console.error('Failed to load snippets:', error.message);
+                    this.snippets = [];
+                } else {
+                    this.snippets = data || [];
+                }
+                this.render();
+            }
+
+            toggleFilterPresets() {
                 this.render();
             }
 
@@ -247,7 +382,7 @@
                 modal.classList.remove('flex');
             }
 
-            handleFormSubmit(e) {
+            async handleFormSubmit(e) {
                 e.preventDefault();
                 const id = document.getElementById('snippetId').value;
                 const tags = document.getElementById('formTags').value
@@ -255,41 +390,72 @@
                     .map(t => t.trim().toLowerCase())
                     .filter(t => t.length > 0);
 
-                const data = {
+                const payload = {
                     title: document.getElementById('formTitle').value.trim(),
                     folder: document.getElementById('formFolder').value.trim().replace(/\/$/, ''),
                     content: document.getElementById('formContent').value,
                     tags: tags,
                     favorite: document.getElementById('formFavorite').checked,
-                    updatedAt: new Date().toISOString()
+                    updated_at: new Date().toISOString()
                 };
 
                 if (id) {
-                    // Update
-                    this.snippets = this.snippets.map(s => s.id === id ? { ...s, ...data } : s);
+                    const { error } = await this.supabase
+                        .from('snippets')
+                        .update(payload)
+                        .eq('id', id);
+                    if (error) {
+                        alert('Update failed: ' + error.message);
+                        return;
+                    }
+                    this.snippets = this.snippets.map(s => s.id === id ? { ...s, ...payload } : s);
                 } else {
-                    // Create
-                    data.id = 'snip_' + Date.now();
-                    data.createdAt = new Date().toISOString();
-                    this.snippets.push(data);
+                    const { data, error } = await this.supabase
+                        .from('snippets')
+                        .insert({ ...payload, user_id: this.user.id })
+                        .select();
+                    if (error) {
+                        alert('Create failed: ' + error.message);
+                        return;
+                    }
+                    this.snippets.unshift(data[0]);
                 }
 
-                this.save();
+                this.render();
                 this.closeModal();
             }
 
-            deleteSnippet(id, event) {
+            async deleteSnippet(id, event) {
                 event.stopPropagation();
                 if (confirm('Are you sure you want to delete this item?')) {
+                    const { error } = await this.supabase
+                        .from('snippets')
+                        .delete()
+                        .eq('id', id);
+                    if (error) {
+                        alert('Delete failed: ' + error.message);
+                        return;
+                    }
                     this.snippets = this.snippets.filter(s => s.id !== id);
-                    this.save();
+                    this.render();
                 }
             }
 
-            toggleFavorite(id, event) {
+            async toggleFavorite(id, event) {
                 event.stopPropagation();
-                this.snippets = this.snippets.map(s => s.id === id ? { ...s, favorite: !s.favorite } : s);
-                this.save();
+                const target = this.snippets.find(s => s.id === id);
+                if (!target) return;
+                const next = !target.favorite;
+                const { error } = await this.supabase
+                    .from('snippets')
+                    .update({ favorite: next, updated_at: new Date().toISOString() })
+                    .eq('id', id);
+                if (error) {
+                    alert('Update failed: ' + error.message);
+                    return;
+                }
+                this.snippets = this.snippets.map(s => s.id === id ? { ...s, favorite: next } : s);
+                this.render();
             }
 
             async copyToClipboard(text, element) {
@@ -341,18 +507,18 @@
                     if (this.currentFilter === 'favorites' && !s.favorite) return false;
                     if (this.currentFilter.startsWith('tag:')) {
                         const targetTag = this.currentFilter.split(':')[1];
-                        if (!s.tags.includes(targetTag)) return false;
+                        if (!(s.tags || []).includes(targetTag)) return false;
                     }
                     if (this.currentFilter.startsWith('folder:')) {
                         const targetFolder = this.currentFilter.split(':')[1];
-                        if (s.folder !== targetFolder && !s.folder.startsWith(targetFolder + '/')) return false;
+                        if (s.folder !== targetFolder && !(s.folder || '').startsWith(targetFolder + '/')) return false;
                     }
 
                     // Search Context matches
                     if (this.searchQuery) {
-                        const matchTitle = s.title.toLowerCase().includes(this.searchQuery);
-                        const matchContent = s.content.toLowerCase().includes(this.searchQuery);
-                        const matchTags = s.tags.some(t => t.toLowerCase().includes(this.searchQuery));
+                        const matchTitle = (s.title || '').toLowerCase().includes(this.searchQuery);
+                        const matchContent = (s.content || '').toLowerCase().includes(this.searchQuery);
+                        const matchTags = (s.tags || []).some(t => t.toLowerCase().includes(this.searchQuery));
                         const matchFolder = s.folder && s.folder.toLowerCase().includes(this.searchQuery);
                         return matchTitle || matchContent || matchTags || matchFolder;
                     }
@@ -370,7 +536,7 @@
                     banner.classList.replace('flex', 'hidden');
                 } else {
                     banner.classList.replace('hidden', 'flex');
-                    bannerText.innerText = `Active Filter: ${this.currentFilter.replace(':', ' ➔ ')}`;
+                    bannerText.innerText = `Active Filter: ${this.currentFilter.replace(':', ' → ')}`;
                 }
 
                 // Compile Sidebar tags & folders lists dynamically
@@ -387,10 +553,11 @@
                 filtered.forEach(snip => {
                     const isLong = snip.content.length > 200;
                     const displayContent = isLong ? snip.content.substring(0, 180) + '...' : snip.content;
+                    const escForAttr = (str) => str.replace(/`/g, '\\`').replace(/\${/g, '\\${');
 
                     const card = document.createElement('div');
                     card.className = "bg-white border border-slate-200 rounded-2xl p-5 relative shadow-xs hover:shadow-md transition-all duration-200 card-hover-dim flex flex-col justify-between group min-h-[180px] cursor-pointer";
-                    card.setAttribute('onclick', `window.portal.copyToClipboard(\`${snip.content.replace(/`/g, '\\`').replace(/\${/g, '\\${')}\`, this)`);
+                    card.setAttribute('onclick', `window.portal.copyToClipboard(\`${escForAttr(snip.content)}\`, this)`);
 
                     card.innerHTML = `
                         <!-- Absolute Interactive elements overlaying dim zone -->
@@ -421,7 +588,7 @@
                             
                             <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2 relative z-20">
                                 <div class="flex flex-wrap gap-1 overflow-hidden max-h-6">
-                                    ${snip.tags.map(t => `<span onclick="event.stopPropagation(); window.portal.setFilter('tag', '${t}')" class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md hover:bg-indigo-50 hover:text-indigo-600 transition-colors">${t}</span>`).join('')}
+                                    ${(snip.tags || []).map(t => `<span onclick="event.stopPropagation(); window.portal.setFilter('tag', '${t}')" class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-md hover:bg-indigo-50 hover:text-indigo-600 transition-colors">${t}</span>`).join('')}
                                 </div>
                                 ${isLong ? `
                                     <button onclick="event.stopPropagation(); window.portal.openViewModal('${snip.id}')" class="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 shrink-0 flex items-center gap-0.5 cursor-pointer bg-indigo-50 px-2 py-0.5 rounded-md">
@@ -445,9 +612,8 @@
                 const foldersMap = {};
 
                 this.snippets.forEach(s => {
-                    s.tags.forEach(t => tagsMap[t] = (tagsMap[t] || 0) + 1);
+                    (s.tags || []).forEach(t => tagsMap[t] = (tagsMap[t] || 0) + 1);
                     if (s.folder) {
-                        // Support high level routing groups paths if nesting
                         foldersMap[s.folder] = (foldersMap[s.folder] || 0) + 1;
                     }
                 });
